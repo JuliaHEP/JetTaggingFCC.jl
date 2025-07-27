@@ -24,8 +24,10 @@ Build the collection of constituents using cluster indices.
 # Returns
 A vector of JetConstituents, each containing the constituents for a specific cluster.
 """
-function build_constituents_cluster(reco_particles::JetConstituents,
-                                    indices::Vector{Vector{Int64}})
+function build_constituents_cluster(
+    reco_particles::JetConstituents,
+    indices::Vector{Vector{Int64}},
+)
     return map(jet_indices -> reco_particles[jet_indices], indices)
 end
 
@@ -40,8 +42,10 @@ Retrieve the constituents of an indexed jet in the event.
 # Returns
 The constituents of the specified jet, or an empty collection if the jet index is invalid.
 """
-function get_jet_constituents(constituents_collection::Vector{JetConstituents},
-                              jet_index::Int)
+function get_jet_constituents(
+    constituents_collection::Vector{JetConstituents},
+    jet_index::Int,
+)
     return constituents_collection[jet_index]
 end
 
@@ -57,8 +61,10 @@ Retrieve the constituents of a collection of indexed jets in the event.
 # Returns
 A vector of `JetConstituents`, each containing the constituents for the specified jets.
 """
-function get_constituents(constituents_collection::Vector{JetConstituents},
-                          jet_indices::Vector{Int})
+function get_constituents(
+    constituents_collection::Vector{JetConstituents},
+    jet_indices::Vector{Int},
+)
     # Filter valid indices and map to corresponding constituents
     valid_indices = filter(idx -> 1 <= idx <= length(constituents_collection), jet_indices)
     return map(idx -> constituents_collection[idx], valid_indices)

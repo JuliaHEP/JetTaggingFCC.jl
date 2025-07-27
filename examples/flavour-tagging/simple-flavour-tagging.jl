@@ -75,15 +75,17 @@ function main()
     reco_to_mc = Dict(link.rec_idx.index => link.sim_idx.index for link in MCRecoLinks)
     for (rec_idx, mc_idx) in reco_to_mc
         if rec_idx < length(recps) && mc_idx < length(mcps)
-            mc_vertices[rec_idx + 1] = LorentzVector(Float32(mcps[mc_idx + 1].vertex.x),
-                                                     Float32(mcps[mc_idx + 1].vertex.y),
-                                                     Float32(mcps[mc_idx + 1].vertex.z),
-                                                     Float32(mcps[mc_idx + 1].time))
+            mc_vertices[rec_idx+1] = LorentzVector(
+                Float32(mcps[mc_idx+1].vertex.x),
+                Float32(mcps[mc_idx+1].vertex.y),
+                Float32(mcps[mc_idx+1].vertex.z),
+                Float32(mcps[mc_idx+1].time),
+            )
         end
     end
 
     # Fill any missing vertices with (0,0,0,0)
-    for i in 1:length(recps)
+    for i = 1:length(recps)
         if !isassigned(mc_vertices, i)
             mc_vertices[i] = LorentzVector(0.0f0, 0.0f0, 0.0f0, 0.0f0)
         end
@@ -111,7 +113,9 @@ function main()
             break
         end
     end
-    println("  - Primary vertex: ($(round(primary_vertex.x, digits=3)), $(round(primary_vertex.y, digits=3)), $(round(primary_vertex.z, digits=3))) mm")
+    println(
+        "  - Primary vertex: ($(round(primary_vertex.x, digits=3)), $(round(primary_vertex.y, digits=3)), $(round(primary_vertex.z, digits=3))) mm",
+    )
 
     # Reconstruct jets
     println("\nReconstructing jets...")
@@ -143,35 +147,37 @@ function main()
 
     # Extract features for flavour tagging
     println("\nExtracting features for flavour tagging...")
-    feature_data = JetTaggingFCC.extract_features(jets,
-                                                      jet_constituents,
-                                                      tracks,
-                                                      bz,
-                                                      track_L,
-                                                      config,
-                                                      trackdata,
-                                                      trackerhits,
-                                                      gammadata,
-                                                      nhdata,
-                                                      calohits,
-                                                      dNdx,
-                                                      mc_vertices)
+    feature_data = JetTaggingFCC.extract_features(
+        jets,
+        jet_constituents,
+        tracks,
+        bz,
+        track_L,
+        config,
+        trackdata,
+        trackerhits,
+        gammadata,
+        nhdata,
+        calohits,
+        dNdx,
+        mc_vertices,
+    )
 
     # Prepare input tensors
     println("Preparing input tensors...")
-    input_tensors = JetTaggingFCC.prepare_input_tensor(jet_constituents,
-                                                           jets,
-                                                           config,
-                                                           feature_data)
+    input_tensors =
+        JetTaggingFCC.prepare_input_tensor(jet_constituents, jets, config, feature_data)
 
     # Run inference
     println("Running neural network inference...")
-    weights = JetTaggingFCC.get_weights(0,  # Thread slot
-                                            feature_data,
-                                            jets,
-                                            jet_constituents,
-                                            config,
-                                            model)
+    weights = JetTaggingFCC.get_weights(
+        0,  # Thread slot
+        feature_data,
+        jets,
+        jet_constituents,
+        config,
+        model,
+    )
 
     # Extract and display results
     println("\n" * "="^60)
@@ -179,7 +185,9 @@ function main()
     println("="^60)
 
     for (jet_idx, jet) in enumerate(jets)
-        println("\nJet $jet_idx (E=$(round(jet.E, digits=1)) GeV, pT=$(round(JetReconstruction.pt(jet), digits=1)) GeV):")
+        println(
+            "\nJet $jet_idx (E=$(round(jet.E, digits=1)) GeV, pT=$(round(JetReconstruction.pt(jet), digits=1)) GeV):",
+        )
         println("-"^40)
 
         # Collect scores for this jet
@@ -202,11 +210,13 @@ function main()
 
             # Handle NaN or invalid scores
             if isnan(score) || isinf(score)
-                flavor_map = Dict("recojet_isG" => "Gluon   ",
-                                  "recojet_isQ" => "Light q ",
-                                  "recojet_isS" => "Strange ",
-                                  "recojet_isC" => "Charm   ",
-                                  "recojet_isB" => "Bottom  ")
+                flavor_map = Dict(
+                    "recojet_isG" => "Gluon   ",
+                    "recojet_isQ" => "Light q ",
+                    "recojet_isS" => "Strange ",
+                    "recojet_isC" => "Charm   ",
+                    "recojet_isB" => "Bottom  ",
+                )
                 formatted_label = get(flavor_map, label, label)
                 println("  $formatted_label: [Invalid score]")
                 continue
@@ -217,11 +227,13 @@ function main()
             percentage = round(score * 100, digits = 1)
 
             # Format label
-            flavor_map = Dict("recojet_isG" => "Gluon   ",
-                              "recojet_isQ" => "Light q ",
-                              "recojet_isS" => "Strange ",
-                              "recojet_isC" => "Charm   ",
-                              "recojet_isB" => "Bottom  ")
+            flavor_map = Dict(
+                "recojet_isG" => "Gluon   ",
+                "recojet_isQ" => "Light q ",
+                "recojet_isS" => "Strange ",
+                "recojet_isC" => "Charm   ",
+                "recojet_isB" => "Bottom  ",
+            )
 
             formatted_label = get(flavor_map, label, label)
             println("  $formatted_label: $bar $(percentage)%")
@@ -232,13 +244,17 @@ function main()
         max_label = labels[max_idx]
         max_score = scores[max_idx]
 
-        flavour_name = Dict("recojet_isG" => "gluon",
-                            "recojet_isQ" => "light quark",
-                            "recojet_isS" => "strange",
-                            "recojet_isC" => "charm",
-                            "recojet_isB" => "bottom")[max_label]
+        flavour_name = Dict(
+            "recojet_isG" => "gluon",
+            "recojet_isQ" => "light quark",
+            "recojet_isS" => "strange",
+            "recojet_isC" => "charm",
+            "recojet_isB" => "bottom",
+        )[max_label]
 
-        println("\n  → Most likely: $(flavour_name) ($(round(max_score * 100, digits=1))% confidence)")
+        println(
+            "\n  → Most likely: $(flavour_name) ($(round(max_score * 100, digits=1))% confidence)",
+        )
     end
 
     println("\n" * "="^60)

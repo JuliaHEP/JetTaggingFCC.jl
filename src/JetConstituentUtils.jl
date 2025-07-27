@@ -9,7 +9,7 @@ using LorentzVectorHEP
 include("JetPhysicalConstants.jl")
 using .JetPhysicalConstants
 
-const JetConstituents = StructVector{ReconstructedParticle, <:Any}
+const JetConstituents = StructVector{ReconstructedParticle,<:Any}
 const JetConstituentsData = Vector{Float32}
 
 ### Basic Kinematic (11)
@@ -38,13 +38,13 @@ Get the transverse momentum of each particle in each jet.
 A vector of vectors of transverse momentum values (sqrt(px^2 + py^2))
 """
 function get_pt(jets_constituents::Vector{<:JetConstituents})
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                Float32[@inbounds sqrt(mom_x[i]^2 + mom_y[i]^2)
-                        for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            Float32[@inbounds sqrt(mom_x[i]^2 + mom_y[i]^2) for i in eachindex(mom_x)]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -59,14 +59,17 @@ Get the momentum magnitude of each particle in each jet.
 A vector of vectors of momentum magnitudes (sqrt(px^2 + py^2 + pz^2))
 """
 function get_p(jets_constituents::Vector{<:JetConstituents})
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                mom_z = jet_constituents.momentum.z
-                Float32[@inbounds sqrt(mom_x[i]^2 + mom_y[i]^2 + mom_z[i]^2)
-                        for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            mom_z = jet_constituents.momentum.z
+            Float32[
+                @inbounds sqrt(mom_x[i]^2 + mom_y[i]^2 + mom_z[i]^2) for
+                i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -141,16 +144,21 @@ Get the polar angle of each particle in each jet.
 A vector of vectors of polar angle values
 """
 function get_theta(jets_constituents::Vector{<:JetConstituents})
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                mom_z = jet_constituents.momentum.z
-                Float32[@inbounds(let x = mom_x[i], y = mom_y[i], z = mom_z[i]
-                                      (x == 0.0f0 && y == 0.0f0 && z == 0.0f0) ? 0.0f0 :
-                                      atan(sqrt(x^2 + y^2), z)
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            mom_z = jet_constituents.momentum.z
+            Float32[
+                @inbounds(
+                    let x = mom_x[i], y = mom_y[i], z = mom_z[i]
+                        (x == 0.0f0 && y == 0.0f0 && z == 0.0f0) ? 0.0f0 :
+                        atan(sqrt(x^2 + y^2), z)
+                    end
+                ) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -165,14 +173,17 @@ Get the azimuthal angle of each particle in each jet.
 A vector of vectors of azimuthal angle values
 """
 function get_phi(jets_constituents::Vector{<:JetConstituents})
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                Float32[@inbounds(let x = mom_x[i], y = mom_y[i]
-                                      (x == 0.0f0 && y == 0.0f0) ? 0.0f0 : atan(y, x)
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            Float32[
+                @inbounds(let x = mom_x[i], y = mom_y[i]
+                    (x == 0.0f0 && y == 0.0f0) ? 0.0f0 : atan(y, x)
+                end) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -187,14 +198,17 @@ Get the rapidity of each particle in each jet.
 A vector of vectors of rapidity values
 """
 function get_y(jets_constituents::Vector{<:JetConstituents})
-    return [begin
-                energies = jet_constituents.energy
-                mom_z = jet_constituents.momentum.z
-                Float32[@inbounds(let e = energies[i], pz = mom_z[i]
-                                      0.5f0 * log((e + pz) / (e - pz))
-                                  end) for i in eachindex(energies)]
-            end
-            for jet_constituents in jets_constituents]
+    return [
+        begin
+            energies = jet_constituents.energy
+            mom_z = jet_constituents.momentum.z
+            Float32[
+                @inbounds(let e = energies[i], pz = mom_z[i]
+                    0.5f0 * log((e + pz) / (e - pz))
+                end) for i in eachindex(energies)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -209,22 +223,25 @@ Get the pseudorapidity of each particle in each jet.
 A vector of vectors of pseudorapidity values (eta = -ln(tan(theta/2)))
 """
 function get_eta(jets_constituents::Vector{<:JetConstituents})
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                mom_z = jet_constituents.momentum.z
-                Float32[@inbounds(let x = mom_x[i], y = mom_y[i], z = mom_z[i]
-                                      p = sqrt(x^2 + y^2 + z^2)
-                                      if p == 0.0f0
-                                          0.0f0
-                                      elseif p == abs(z)  # particle along beam axis
-                                          sign(z) * Inf32
-                                      else
-                                          0.5f0 * log((p + z) / (p - z))
-                                      end
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            mom_z = jet_constituents.momentum.z
+            Float32[
+                @inbounds(let x = mom_x[i], y = mom_y[i], z = mom_z[i]
+                    p = sqrt(x^2 + y^2 + z^2)
+                    if p == 0.0f0
+                        0.0f0
+                    elseif p == abs(z)  # particle along beam axis
+                        sign(z) * Inf32
+                    else
+                        0.5f0 * log((p + z) / (p - z))
+                    end
+                end) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -240,31 +257,39 @@ Calculate the magnetic field Bz for each particle based on track curvature and m
 # Returns 
 A vector of vectors of Bz values.
 """
-function get_Bz(jets_constituents::Vector{<:JetConstituents},
-                tracks::StructVector{EDM4hep.TrackState})
+function get_Bz(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     a = C_LIGHT * MM_TO_M / FS_TO_S
     n_tracks = length(tracks)
 
     # If tracks is a StructVector, we can access omega column directly
     omega_values = tracks.omega
 
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                charges = jet_constituents.charge
-                track_indices = jet_constituents.tracks
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            charges = jet_constituents.charge
+            track_indices = jet_constituents.tracks
 
-                Float32[@inbounds(let track_idx = track_indices[i].first
-                                      if track_idx < n_tracks
-                                          pt = sqrt(mom_x[i]^2 + mom_y[i]^2)
-                                          omega_values[track_idx + 1] / a * pt *
-                                          copysign(1.0f0, charges[i])
-                                      else
-                                          UNDEF_VAL
-                                      end
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+            Float32[
+                @inbounds(
+                    let track_idx = track_indices[i].first
+                        if track_idx < n_tracks
+                            pt = sqrt(mom_x[i]^2 + mom_y[i]^2)
+                            omega_values[track_idx+1] / a *
+                            pt *
+                            copysign(1.0f0, charges[i])
+                        else
+                            UNDEF_VAL
+                        end
+                    end
+                ) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 ### Track Related Functions (5)
@@ -293,9 +318,12 @@ Reference: FCCAnalyses c++ function XPtoPar_dxy, adapted for jet constituents.
 # Returns
 Vector of vectors of dxy values (one vector per jet)
 """
-function get_dxy(jets_constituents::Vector{<:JetConstituents},
-                 tracks::StructVector{EDM4hep.TrackState},
-                 V::LorentzVector, Bz::Float32)
+function get_dxy(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+    V::LorentzVector,
+    Bz::Float32,
+)
     cSpeed_Bz = C_LIGHT * NS_TO_S * Bz
     n_tracks = length(tracks)
 
@@ -304,48 +332,51 @@ function get_dxy(jets_constituents::Vector{<:JetConstituents},
     D0_values = tracks.D0
     phi_values = tracks.phi
 
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                charges = jet_constituents.charge
-                track_indices = jet_constituents.tracks
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            charges = jet_constituents.charge
+            track_indices = jet_constituents.tracks
 
-                Float32[@inbounds(let track_idx = track_indices[i].first
-                                      if track_idx < n_tracks
-                                          idx = track_idx + 1
-                                          D0 = D0_values[idx]
-                                          phi0 = phi_values[idx]
+            Float32[
+                @inbounds(let track_idx = track_indices[i].first
+                    if track_idx < n_tracks
+                        idx = track_idx + 1
+                        D0 = D0_values[idx]
+                        phi0 = phi_values[idx]
 
-                                          sin_phi, cos_phi = sincos(phi0)
-                                          x1 = -D0 * sin_phi - Vx
-                                          x2 = D0 * cos_phi - Vy
+                        sin_phi, cos_phi = sincos(phi0)
+                        x1 = -D0 * sin_phi - Vx
+                        x2 = D0 * cos_phi - Vy
 
-                                          px = mom_x[i]
-                                          py = mom_y[i]
+                        px = mom_x[i]
+                        py = mom_y[i]
 
-                                          a = -charges[i] * cSpeed_Bz
-                                          pt = sqrt(px^2 + py^2)
-                                          r2 = x1^2 + x2^2
-                                          cross = x1 * py - x2 * px
+                        a = -charges[i] * cSpeed_Bz
+                        pt = sqrt(px^2 + py^2)
+                        r2 = x1^2 + x2^2
+                        cross = x1 * py - x2 * px
 
-                                          # Compute impact parameter
-                                          discriminant = pt^2 - 2 * a * cross + a^2 * r2
-                                          if discriminant > 0
-                                              t = sqrt(discriminant)
-                                              if pt < 10.0f0
-                                                  (t - pt) / a
-                                              else
-                                                  (-2 * cross + a * r2) / (t + pt)
-                                              end
-                                          else
-                                              UNDEF_VAL
-                                          end
-                                      else
-                                          UNDEF_VAL
-                                      end
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+                        # Compute impact parameter
+                        discriminant = pt^2 - 2 * a * cross + a^2 * r2
+                        if discriminant > 0
+                            t = sqrt(discriminant)
+                            if pt < 10.0f0
+                                (t - pt) / a
+                            else
+                                (-2 * cross + a * r2) / (t + pt)
+                            end
+                        else
+                            UNDEF_VAL
+                        end
+                    else
+                        UNDEF_VAL
+                    end
+                end) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -365,9 +396,12 @@ Reference: FCCAnalyses c++ function XPtoPar_dz, adapted for jet constituents.
 # Returns
 Vector of vectors of dz values (one vector per jet)
 """
-function get_dz(jets_constituents::Vector{<:JetConstituents},
-                tracks::StructVector{EDM4hep.TrackState},
-                V::LorentzVector, Bz::Float32)
+function get_dz(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+    V::LorentzVector,
+    Bz::Float32,
+)
     cSpeed_Bz = C_LIGHT * NS_TO_S * Bz
     n_tracks = length(tracks)
 
@@ -377,67 +411,70 @@ function get_dz(jets_constituents::Vector{<:JetConstituents},
     Z0_values = tracks.Z0
     phi_values = tracks.phi
 
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                mom_z = jet_constituents.momentum.z
-                charges = jet_constituents.charge
-                track_indices = jet_constituents.tracks
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            mom_z = jet_constituents.momentum.z
+            charges = jet_constituents.charge
+            track_indices = jet_constituents.tracks
 
-                Float32[@inbounds(let track_idx = track_indices[i].first
-                                      if track_idx < n_tracks
-                                          idx = track_idx + 1
-                                          D0 = D0_values[idx]
-                                          Z0 = Z0_values[idx]
-                                          phi0 = phi_values[idx]
+            Float32[
+                @inbounds(let track_idx = track_indices[i].first
+                    if track_idx < n_tracks
+                        idx = track_idx + 1
+                        D0 = D0_values[idx]
+                        Z0 = Z0_values[idx]
+                        phi0 = phi_values[idx]
 
-                                          sin_phi, cos_phi = sincos(phi0)
+                        sin_phi, cos_phi = sincos(phi0)
 
-                                          x1 = -D0 * sin_phi - Vx
-                                          x2 = D0 * cos_phi - Vy
-                                          x3 = Z0 - Vz
+                        x1 = -D0 * sin_phi - Vx
+                        x2 = D0 * cos_phi - Vy
+                        x3 = Z0 - Vz
 
-                                          px = mom_x[i]
-                                          py = mom_y[i]
-                                          pz = mom_z[i]
+                        px = mom_x[i]
+                        py = mom_y[i]
+                        pz = mom_z[i]
 
-                                          # Compute intermediate values
-                                          a = -charges[i] * cSpeed_Bz
-                                          pt = sqrt(px^2 + py^2)
-                                          c = a / (2 * pt)
-                                          r2 = x1^2 + x2^2
-                                          cross = x1 * py - x2 * px
-                                          t = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
+                        # Compute intermediate values
+                        a = -charges[i] * cSpeed_Bz
+                        pt = sqrt(px^2 + py^2)
+                        c = a / (2 * pt)
+                        r2 = x1^2 + x2^2
+                        cross = x1 * py - x2 * px
+                        t = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
 
-                                          d = if pt < 10.0f0
-                                              (t - pt) / a
-                                          else
-                                              (-2 * cross + a * r2) / (t + pt)
-                                          end
+                        d = if pt < 10.0f0
+                            (t - pt) / a
+                        else
+                            (-2 * cross + a * r2) / (t + pt)
+                        end
 
-                                          b_arg = max(r2 - d^2, 0.0f0) / (1 + 2 * c * d)
-                                          b = c * sqrt(b_arg)
-                                          if abs(b) > 1.0f0
-                                              b = sign(b)
-                                          end
+                        b_arg = max(r2 - d^2, 0.0f0) / (1 + 2 * c * d)
+                        b = c * sqrt(b_arg)
+                        if abs(b) > 1.0f0
+                            b = sign(b)
+                        end
 
-                                          # Calculate st and ct
-                                          st = asin(b) / c
-                                          ct = pz / pt
+                        # Calculate st and ct
+                        st = asin(b) / c
+                        ct = pz / pt
 
-                                          # Calculate z0
-                                          dot = x1 * px + x2 * py
-                                          if dot > 0.0f0
-                                              x3 - ct * st
-                                          else
-                                              x3 + ct * st
-                                          end
-                                      else
-                                          UNDEF_VAL
-                                      end
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+                        # Calculate z0
+                        dot = x1 * px + x2 * py
+                        if dot > 0.0f0
+                            x3 - ct * st
+                        else
+                            x3 + ct * st
+                        end
+                    else
+                        UNDEF_VAL
+                    end
+                end) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -457,9 +494,12 @@ This is a Julia implementation of the C++ function XPtoPar_phi.
 # Returns
 Vector of vectors of phi values (one vector per jet)
 """
-function get_phi0(jets_constituents::Vector{<:JetConstituents},
-                  tracks::StructVector{EDM4hep.TrackState},
-                  V::LorentzVector, Bz::Float32)
+function get_phi0(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+    V::LorentzVector,
+    Bz::Float32,
+)
     cSpeed_Bz = C_LIGHT * NS_TO_S * Bz
     n_tracks = length(tracks)
 
@@ -468,47 +508,50 @@ function get_phi0(jets_constituents::Vector{<:JetConstituents},
     D0_values = tracks.D0
     phi_values = tracks.phi
 
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                charges = jet_constituents.charge
-                track_indices = jet_constituents.tracks
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            charges = jet_constituents.charge
+            track_indices = jet_constituents.tracks
 
-                Float32[@inbounds(let track_idx = track_indices[i].first
-                                      if track_idx < n_tracks
-                                          idx = track_idx + 1
-                                          D0 = D0_values[idx]
-                                          phi0_track = phi_values[idx]
+            Float32[
+                @inbounds(let track_idx = track_indices[i].first
+                    if track_idx < n_tracks
+                        idx = track_idx + 1
+                        D0 = D0_values[idx]
+                        phi0_track = phi_values[idx]
 
-                                          sin_phi, cos_phi = sincos(phi0_track)
+                        sin_phi, cos_phi = sincos(phi0_track)
 
-                                          x1 = -D0 * sin_phi - Vx
-                                          x2 = D0 * cos_phi - Vy
+                        x1 = -D0 * sin_phi - Vx
+                        x2 = D0 * cos_phi - Vy
 
-                                          px = mom_x[i]
-                                          py = mom_y[i]
+                        px = mom_x[i]
+                        py = mom_y[i]
 
-                                          a = -charges[i] * cSpeed_Bz
+                        a = -charges[i] * cSpeed_Bz
 
-                                          # Minimize redundant calculations
-                                          pt2 = px^2 + py^2
-                                          r2 = x1^2 + x2^2
-                                          cross = x1 * py - x2 * px
-                                          two_a_cross = 2 * a * cross
-                                          a2_r2 = a^2 * r2
+                        # Minimize redundant calculations
+                        pt2 = px^2 + py^2
+                        r2 = x1^2 + x2^2
+                        cross = x1 * py - x2 * px
+                        two_a_cross = 2 * a * cross
+                        a2_r2 = a^2 * r2
 
-                                          t = sqrt(pt2 - two_a_cross + a2_r2)
-                                          inv_t = 1.0f0 / t
+                        t = sqrt(pt2 - two_a_cross + a2_r2)
+                        inv_t = 1.0f0 / t
 
-                                          a_x1 = a * x1
-                                          a_x2 = a * x2
-                                          atan((py - a_x1) * inv_t, (px + a_x2) * inv_t)
-                                      else
-                                          UNDEF_VAL
-                                      end
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+                        a_x1 = a * x1
+                        a_x2 = a * x2
+                        atan((py - a_x1) * inv_t, (px + a_x2) * inv_t)
+                    else
+                        UNDEF_VAL
+                    end
+                end) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -527,30 +570,35 @@ Reference: FCCAnalyses c++ function XPtoPar_C, adapted for jet constituents.
 # Returns
 Vector of vectors of C values (one vector per jet)
 """
-function get_c(jets_constituents::Vector{<:JetConstituents},
-               tracks::StructVector{EDM4hep.TrackState},
-               Bz::Float32)
+function get_c(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+    Bz::Float32,
+)
     cSpeed_Bz_half = C_LIGHT * MM_TO_M / FS_TO_S * Bz * 0.5f0
     n_tracks = length(tracks)
 
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                charges = jet_constituents.charge
-                track_indices = jet_constituents.tracks
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            charges = jet_constituents.charge
+            track_indices = jet_constituents.tracks
 
-                Float32[@inbounds(let track_idx = track_indices[i].first
-                                      if track_idx < n_tracks
-                                          px = mom_x[i]
-                                          py = mom_y[i]
-                                          inv_pt = 1.0f0 / sqrt(px^2 + py^2)
-                                          copysign(cSpeed_Bz_half * inv_pt, charges[i])
-                                      else
-                                          UNDEF_VAL
-                                      end
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+            Float32[
+                @inbounds(let track_idx = track_indices[i].first
+                    if track_idx < n_tracks
+                        px = mom_x[i]
+                        py = mom_y[i]
+                        inv_pt = 1.0f0 / sqrt(px^2 + py^2)
+                        copysign(cSpeed_Bz_half * inv_pt, charges[i])
+                    else
+                        UNDEF_VAL
+                    end
+                end) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 """
@@ -569,30 +617,35 @@ Reference: FCCAnalyses c++ function XPtoPar_ct, adapted for jet constituents.
 # Returns
 Vector of vectors of ct values (one vector per jet)
 """
-function get_ct(jets_constituents::Vector{<:JetConstituents},
-                tracks::StructVector{EDM4hep.TrackState},
-                Bz::Float32)
+function get_ct(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+    Bz::Float32,
+)
     n_tracks = length(tracks)
 
-    return [begin
-                mom_x = jet_constituents.momentum.x
-                mom_y = jet_constituents.momentum.y
-                mom_z = jet_constituents.momentum.z
-                track_indices = jet_constituents.tracks
+    return [
+        begin
+            mom_x = jet_constituents.momentum.x
+            mom_y = jet_constituents.momentum.y
+            mom_z = jet_constituents.momentum.z
+            track_indices = jet_constituents.tracks
 
-                Float32[@inbounds(let track_idx = track_indices[i].first
-                                      if track_idx < n_tracks
-                                          px = mom_x[i]
-                                          py = mom_y[i]
-                                          pz = mom_z[i]
-                                          pt = sqrt(px^2 + py^2)
-                                          pz / pt
-                                      else
-                                          UNDEF_VAL
-                                      end
-                                  end) for i in eachindex(mom_x)]
-            end
-            for jet_constituents in jets_constituents]
+            Float32[
+                @inbounds(let track_idx = track_indices[i].first
+                    if track_idx < n_tracks
+                        px = mom_x[i]
+                        py = mom_y[i]
+                        pz = mom_z[i]
+                        pt = sqrt(px^2 + py^2)
+                        pz / pt
+                    else
+                        UNDEF_VAL
+                    end
+                end) for i in eachindex(mom_x)
+            ]
+        end for jet_constituents in jets_constituents
+    ]
 end
 
 ### Covariance Matrix Elements (15)
@@ -628,24 +681,25 @@ Get the d0 covariance (dxy/dxy) for each particle.
 # Returns
 Vector of vectors of dxydxy values
 """
-function get_dxydxy(jets_constituents::Vector{<:JetConstituents},
-                    tracks::StructVector{EDM4hep.TrackState})
+function get_dxydxy(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[1],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[1], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -666,24 +720,25 @@ Get the phi0-d0 covariance (dphi/dxy) for each particle.
 # Returns
 Vector of vectors of dphidxy values 
 """
-function get_dphidxy(jets_constituents::Vector{<:JetConstituents},
-                     tracks::StructVector{EDM4hep.TrackState})
+function get_dphidxy(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[2],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[2], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -706,24 +761,25 @@ Reference: FCCAnalyses c++ function get_phi0_cov, adapted for jet constituents.
 # Returns
 Vector of vectors of dphidphi values 
 """
-function get_dphidphi(jets_constituents::Vector{<:JetConstituents},
-                      tracks::StructVector{EDM4hep.TrackState})
+function get_dphidphi(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[3],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[3], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -744,24 +800,25 @@ Get the d0-omega covariance (dxy/c) for each particle.
 # Returns
 Vector of vectors of dxyc values 
 """
-function get_dxyc(jets_constituents::Vector{<:JetConstituents},
-                  tracks::StructVector{EDM4hep.TrackState})
+function get_dxyc(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[4],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[4], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -782,24 +839,25 @@ Get the phi0-omega covariance (phi/c) for each particle.
 # Returns
 Vector of vectors of phiomega values
 """
-function get_phic(jets_constituents::Vector{<:JetConstituents},
-                  tracks::StructVector{EDM4hep.TrackState})
+function get_phic(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[5],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[5], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -822,24 +880,25 @@ Reference: FCCAnalyses c++ function get_omega_cov, adapted for jet constituents.
 # Returns
 Vector of vectors of dptdpt values
 """
-function get_dptdpt(jets_constituents::Vector{<:JetConstituents},
-                    tracks::StructVector{EDM4hep.TrackState})
+function get_dptdpt(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[6],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[6], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -860,24 +919,25 @@ Get the d0-z0 covariance (dxy/dz) for each particle.
 # Returns
 Vector of vectors of dxy/dz values
 """
-function get_dxydz(jets_constituents::Vector{<:JetConstituents},
-                   tracks::StructVector{EDM4hep.TrackState})
+function get_dxydz(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[7],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[7], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -898,24 +958,25 @@ Get the phi0-z0 covariance (dphi/dz) for each particle.
 # Returns
 Vector of vectors of phidz values
 """
-function get_phidz(jets_constituents::Vector{<:JetConstituents},
-                   tracks::StructVector{EDM4hep.TrackState})
+function get_phidz(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[8],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[8], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -936,24 +997,25 @@ Get the omega-z0 covariance (c/dz) for each particle.
 # Returns
 Vector of vectors of dxdz values
 """
-function get_cdz(jets_constituents::Vector{<:JetConstituents},
-                 tracks::StructVector{EDM4hep.TrackState})
+function get_cdz(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[9],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[9], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -974,24 +1036,25 @@ Get the z0 covariance (dz/dz) for each particle.
 # Returns
 Vector of vectors of z0 covariance values
 """
-function get_dzdz(jets_constituents::Vector{<:JetConstituents},
-                  tracks::StructVector{EDM4hep.TrackState})
+function get_dzdz(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[10],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[10], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1012,24 +1075,25 @@ Get the d0-tanLambda covariance (dxy/ctgtheta) for each particle.
 # Returns
 Vector of vectors of dxyctgtheta values
 """
-function get_dxyctgtheta(jets_constituents::Vector{<:JetConstituents},
-                         tracks::StructVector{EDM4hep.TrackState})
+function get_dxyctgtheta(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[11],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[11], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1050,24 +1114,25 @@ Get the phi0-tanLambda covariance (phi/ctgtheta) for each particle.
 # Returns
 Vector of vectors of phictgtheta values 
 """
-function get_phictgtheta(jets_constituents::Vector{<:JetConstituents},
-                         tracks::StructVector{EDM4hep.TrackState})
+function get_phictgtheta(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[12],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[12], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1088,24 +1153,25 @@ Get the omega-tanLambda covariance (c/ctgtheta) for each particle.
 # Returns
 Vector of vectors of cctgtheta values
 """
-function get_cctgtheta(jets_constituents::Vector{<:JetConstituents},
-                       tracks::StructVector{EDM4hep.TrackState})
+function get_cctgtheta(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[13],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[13], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1126,24 +1192,25 @@ Get the tanLambda-z0 covariance (dlambda/dz) for each particle.
 # Returns
 Vector of vectors of dlambdadz values 
 """
-function get_dlambdadz(jets_constituents::Vector{<:JetConstituents},
-                       tracks::StructVector{EDM4hep.TrackState})
+function get_dlambdadz(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[14],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[14], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1166,24 +1233,25 @@ Reference: FCCAnalyses c++ function get_tanlambda_cov, adapted for jet constitue
 # Returns
 Vector of vectors of detadeta values
 """
-function get_detadeta(jets_constituents::Vector{<:JetConstituents},
-                      tracks::StructVector{EDM4hep.TrackState})
+function get_detadeta(
+    jets_constituents::Vector{<:JetConstituents},
+    tracks::StructVector{EDM4hep.TrackState},
+)
     n_jets = length(jets_constituents)
     n_tracks = length(tracks)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         track_indices = jet_constituents.tracks
         n_particles = length(track_indices)
 
         jet_result = Vector{Float32}(undef, n_particles)
 
-        @simd ivdep for i in 1:n_particles
+        @simd ivdep for i = 1:n_particles
             track_idx = track_indices[i].first
-            jet_result[i] = ifelse(track_idx < n_tracks,
-                                   tracks[track_idx + 1].covMatrix[15],
-                                   UNDEF_VAL)
+            jet_result[i] =
+                ifelse(track_idx < n_tracks, tracks[track_idx+1].covMatrix[15], UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1215,7 +1283,7 @@ function get_is_mu(jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets_constituents)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         charges = jet_constituents.charge
         masses = jet_constituents.mass
@@ -1223,7 +1291,7 @@ function get_is_mu(jets_constituents::Vector{<:JetConstituents})
 
         is_mu = Vector{Float32}(undef, n_particles)
 
-        @simd for i in 1:n_particles
+        @simd for i = 1:n_particles
             charge_check = abs(charges[i]) > 0
             mass_check = abs(masses[i] - MUON_MASS) < MUON_TOLERANCE
             is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
@@ -1250,7 +1318,7 @@ function get_is_el(jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets_constituents)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         charges = jet_constituents.charge
         masses = jet_constituents.mass
@@ -1258,7 +1326,7 @@ function get_is_el(jets_constituents::Vector{<:JetConstituents})
 
         is_mu = Vector{Float32}(undef, n_particles)
 
-        @simd for i in 1:n_particles
+        @simd for i = 1:n_particles
             charge_check = abs(charges[i]) > 0
             mass_check = abs(masses[i] - ELECTRON_MASS) < ELECTRON_TOLERANCE
             is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
@@ -1285,7 +1353,7 @@ function get_is_charged_had(jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets_constituents)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         charges = jet_constituents.charge
         masses = jet_constituents.mass
@@ -1293,7 +1361,7 @@ function get_is_charged_had(jets_constituents::Vector{<:JetConstituents})
 
         is_mu = Vector{Float32}(undef, n_particles)
 
-        @simd for i in 1:n_particles
+        @simd for i = 1:n_particles
             charge_check = abs(charges[i]) > 0
             mass_check = abs(masses[i] - PION_MASS) < PION_TOLERANCE
             is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
@@ -1320,14 +1388,14 @@ function get_is_gamma(jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets_constituents)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         types = jet_constituents.type
         n_particles = length(types)
 
         is_gamma = Vector{Float32}(undef, n_particles)
 
-        @simd for i in 1:n_particles
+        @simd for i = 1:n_particles
             is_gamma[i] = types[i] == PDG_PHOTON ? 1.0f0 : 0.0f0
         end
 
@@ -1352,14 +1420,14 @@ function get_is_neutral_had(jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets_constituents)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for j in 1:n_jets
+    @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
         types = jet_constituents.type
         n_particles = length(types)
 
         is_gamma = Vector{Float32}(undef, n_particles)
 
-        @simd for i in 1:n_particles
+        @simd for i = 1:n_particles
             is_gamma[i] = types[i] == PDG_K_LONG ? 1.0f0 : 0.0f0
         end
 
@@ -1390,12 +1458,11 @@ Calculate relative energy (E_const/E_jet) for each constituent particle in clust
 # Returns
 Vector containing relative energy values for each constituent in the jets.
 """
-function get_erel_cluster(jets::Vector{EEJet},
-                          jets_constituents::Vector{<:JetConstituents})
+function get_erel_cluster(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets)
     res = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         e_jet = jets[i].E
         constituents_collection = jets_constituents[i]
         energies = constituents_collection.energy
@@ -1404,11 +1471,11 @@ function get_erel_cluster(jets::Vector{EEJet},
 
         if e_jet > 0.0f0
             inv_e_jet = 1.0f0 / e_jet
-            @inbounds @simd for j in 1:n_constituents
+            @inbounds @simd for j = 1:n_constituents
                 jet_constituents_collection[j] = energies[j] * inv_e_jet
             end
         else
-            @inbounds @simd for j in 1:n_constituents
+            @inbounds @simd for j = 1:n_constituents
                 jet_constituents_collection[j] = 0.0f0
             end
         end
@@ -1432,12 +1499,14 @@ Calculate log of relative energy (log(E_const/E_jet)) for each constituent parti
 # Returns
 Vector containing log of relative energy values for each constituent in the jets
 """
-function get_erel_log_cluster(jets::Vector{EEJet},
-                              jets_constituents::Vector{<:JetConstituents})
+function get_erel_log_cluster(
+    jets::Vector{EEJet},
+    jets_constituents::Vector{<:JetConstituents},
+)
     n_jets = length(jets)
     res = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         e_jet = jets[i].E
         constituents_collection = jets_constituents[i]
         energies = constituents_collection.energy
@@ -1446,11 +1515,11 @@ function get_erel_log_cluster(jets::Vector{EEJet},
 
         if e_jet > 0.0f0
             inv_e_jet = 1.0f0 / e_jet
-            @inbounds @simd for j in 1:n_constituents
+            @inbounds @simd for j = 1:n_constituents
                 jet_constituents_collection[j] = log10(energies[j] * inv_e_jet)
             end
         else
-            @inbounds @simd for j in 1:n_constituents
+            @inbounds @simd for j = 1:n_constituents
                 jet_constituents_collection[j] = 0.0f0
             end
         end
@@ -1474,12 +1543,14 @@ Calculate relative theta angle between constituent particle and clustered jet ax
 # Returns
 Vector containing relative theta angle values for each constituent in the jets
 """
-function get_thetarel_cluster(jets::Vector{EEJet},
-                              jets_constituents::Vector{<:JetConstituents})
+function get_thetarel_cluster(
+    jets::Vector{EEJet},
+    jets_constituents::Vector{<:JetConstituents},
+)
     n_jets = length(jets)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         jet = jets[i]
         px, py, pz = jet.px, jet.py, jet.pz
 
@@ -1499,7 +1570,7 @@ function get_thetarel_cluster(jets::Vector{EEJet},
         n_constituents = length(mom_x)
         jet_constituents_collection = Vector{Float32}(undef, n_constituents)
 
-        @inbounds for j in 1:n_constituents
+        @inbounds for j = 1:n_constituents
             # First rotation
             p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
@@ -1532,12 +1603,14 @@ Calculate relative phi angle between constituent particle and clustered jet axis
 # Returns
 Vector containing relative phi angle values for each constituent in the jets
 """
-function get_phirel_cluster(jets::Vector{EEJet},
-                            jets_constituents::Vector{<:JetConstituents})
+function get_phirel_cluster(
+    jets::Vector{EEJet},
+    jets_constituents::Vector{<:JetConstituents},
+)
     n_jets = length(jets)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         jet = jets[i]
         px, py, pz = jet.px, jet.py, jet.pz
 
@@ -1557,7 +1630,7 @@ function get_phirel_cluster(jets::Vector{EEJet},
         n_constituents = length(mom_x)
         jet_constituents_collection = Vector{Float32}(undef, n_constituents)
 
-        @inbounds for j in 1:n_constituents
+        @inbounds for j = 1:n_constituents
             # First rotation around z-axis by -phi_jet
             p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
@@ -1588,13 +1661,15 @@ Calculate relative theta and phi angles between constituent particles and cluste
 # Returns
 Tuple of Vectors containing relative theta and phi angle values for each constituent in the jets
 """
-function get_thetarel_phirel_cluster(jets::Vector{EEJet},
-                                     jets_constituents::Vector{<:JetConstituents})
+function get_thetarel_phirel_cluster(
+    jets::Vector{EEJet},
+    jets_constituents::Vector{<:JetConstituents},
+)
     n_jets = length(jets)
     theta_result = Vector{Vector{Float32}}(undef, n_jets)
     phi_result = Vector{Vector{Float32}}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         jet = jets[i]
         px, py, pz = jet.px, jet.py, jet.pz
 
@@ -1616,7 +1691,7 @@ function get_thetarel_phirel_cluster(jets::Vector{EEJet},
         jet_theta = Vector{Float32}(undef, n_constituents)
         jet_phi = Vector{Float32}(undef, n_constituents)
 
-        @inbounds for j in 1:n_constituents
+        @inbounds for j = 1:n_constituents
             # First rotation around z-axis by -phi_jet
             p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
@@ -1662,22 +1737,24 @@ Only charged hadrons have valid dN/dx values.
 # Returns
 Vector of vectors of dN/dx values (one vector per jet, one value per constituent)
 """
-function get_dndx(jets_constituents::Vector{<:JetConstituents},
-                  dNdx::StructVector{EDM4hep.Quantity},
-                  trackdata::StructVector{EDM4hep.Track},
-                  JetsConstituents_isChargedHad::Vector{Vector{Float32}})
+function get_dndx(
+    jets_constituents::Vector{<:JetConstituents},
+    dNdx::StructVector{EDM4hep.Quantity},
+    trackdata::StructVector{EDM4hep.Track},
+    JetsConstituents_isChargedHad::Vector{Vector{Float32}},
+)
     n_jets = length(jets_constituents)
     result = Vector{Vector{Float32}}(undef, n_jets)
     tracks_len = length(trackdata)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         jet = jets_constituents[i]
         tracks_first = jet.tracks
         isChargedHad = JetsConstituents_isChargedHad[i]
         n_constituents = length(jet)
         tmp = Vector{Float32}(undef, n_constituents)
 
-        @simd ivdep for j in 1:n_constituents
+        @simd ivdep for j = 1:n_constituents
             has_valid_track = tracks_first[j].first + 1 <= tracks_len
             is_charged_had = isChargedHad[j] == 1.0f0
             tmp[j] = ifelse(has_valid_track & is_charged_had, -1.0f0, 0.0f0)
@@ -1689,14 +1766,16 @@ function get_dndx(jets_constituents::Vector{<:JetConstituents},
     return result
 end
 
-function get_mtof(jets_constituents::Vector{<:JetConstituents},
-                  track_L::AbstractArray{T} where {T <: Float32},
-                  trackdata::StructVector{EDM4hep.Track},
-                  trackerhits::StructVector{EDM4hep.TrackerHit},
-                  gammadata::StructVector{EDM4hep.Cluster},
-                  nhdata::StructVector{EDM4hep.Cluster},
-                  calohits::StructVector{EDM4hep.CalorimeterHit},
-                  V::LorentzVector)
+function get_mtof(
+    jets_constituents::Vector{<:JetConstituents},
+    track_L::AbstractArray{T} where {T<:Float32},
+    trackdata::StructVector{EDM4hep.Track},
+    trackerhits::StructVector{EDM4hep.TrackerHit},
+    gammadata::StructVector{EDM4hep.Cluster},
+    nhdata::StructVector{EDM4hep.Cluster},
+    calohits::StructVector{EDM4hep.CalorimeterHit},
+    V::LorentzVector,
+)
     n_jets = length(jets_constituents)
     result = Vector{Vector{Float32}}(undef, n_jets)
 
@@ -1710,7 +1789,7 @@ function get_mtof(jets_constituents::Vector{<:JetConstituents},
     vx, vy, vz = V.x, V.y, V.z
     v_t_scaled = V.t * MM_TO_M * C_LIGHT_INV  # Tin calculation
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         single_jet_constituents = jets_constituents[i]
         n_constituents = length(single_jet_constituents)
 
@@ -1729,7 +1808,7 @@ function get_mtof(jets_constituents::Vector{<:JetConstituents},
         mom_y = single_jet_constituents.momentum.y
         mom_z = single_jet_constituents.momentum.z
 
-        for j in 1:n_constituents
+        for j = 1:n_constituents
             cluster_idx = clusters_first[j].first
             track_idx = tracks_first[j].first
             particle_type = types[j]
@@ -1779,12 +1858,12 @@ function get_mtof(jets_constituents::Vector{<:JetConstituents},
                         mass_calculated = MUON_MASS
                     else
                         # Calculate from time of flight
-                        track = trackdata[track_idx + 1]
+                        track = trackdata[track_idx+1]
                         last_hit_idx = track.trackerHits.last
                         Tout = trackerhits[last_hit_idx].time
                         tof = Tout - v_t_scaled
 
-                        l = track_L[track_idx + 1] * MM_TO_M
+                        l = track_L[track_idx+1] * MM_TO_M
                         beta = l / (tof * C_LIGHT)
 
                         if 0.0f0 < beta < 1.0f0
@@ -1844,14 +1923,16 @@ This is a Julia implementation of the C++ function get_Sip2dVal_clusterV.
 # Returns
 Vector of vectors of 2D signed impact parameter values (one vector per jet)
 """
-function get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
-                               D0::Vector{JetConstituentsData},
-                               phi0::Vector{JetConstituentsData},
-                               Bz::Float32)
+function get_Sip2dVal_clusterV(
+    jets::Vector{JetReconstruction.EEJet},
+    D0::Vector{JetConstituentsData},
+    phi0::Vector{JetConstituentsData},
+    Bz::Float32,
+)
     n_jets = length(jets)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         px = Float32(jets[i].px)
         py = Float32(jets[i].py)
         d0_vals = D0[i]
@@ -1860,7 +1941,7 @@ function get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
 
         sip2d_values = Vector{Float32}(undef, n_constituents)
 
-        @inbounds for j in 1:n_constituents
+        @inbounds for j = 1:n_constituents
             d0_val = d0_vals[j]
             phi_val = phi_vals[j]
 
@@ -1893,10 +1974,12 @@ end
 
 Call the implementation function get_Sip2dVal_clusterV
 """
-function get_btagSip2dVal(jets::Vector{JetReconstruction.EEJet},
-                          pfcand_dxy::Vector{JetConstituentsData},
-                          pfcand_phi0::Vector{JetConstituentsData},
-                          Bz::Float32)
+function get_btagSip2dVal(
+    jets::Vector{JetReconstruction.EEJet},
+    pfcand_dxy::Vector{JetConstituentsData},
+    pfcand_phi0::Vector{JetConstituentsData},
+    Bz::Float32,
+)
     # Simply call the implementation function
     return get_Sip2dVal_clusterV(jets, pfcand_dxy, pfcand_phi0, Bz)
 end
@@ -1915,18 +1998,20 @@ This is a Julia implementation of the C++ function get_Sip2dSig.
 # Returns
 Vector of vectors of 2D signed impact parameter significances (one vector per jet)
 """
-function get_Sip2dSig(Sip2dVals::Vector{JetConstituentsData},
-                      err2_D0::Vector{JetConstituentsData})
+function get_Sip2dSig(
+    Sip2dVals::Vector{JetConstituentsData},
+    err2_D0::Vector{JetConstituentsData},
+)
     n_jets = length(Sip2dVals)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         n_constituents = length(Sip2dVals[i])
         sig_values = Vector{Float32}(undef, n_constituents)
         sip_vals = Sip2dVals[i]
         err_vals = err2_D0[i]
 
-        @simd for j in 1:n_constituents
+        @simd for j = 1:n_constituents
             err_val = err_vals[j]
             sip_val = sip_vals[j]
 
@@ -1949,8 +2034,10 @@ end
 
 Call the implementation function get_Sip2dSig
 """
-function get_btagSip2dSig(pfcand_btagSip2dVal::Vector{JetConstituentsData},
-                          pfcand_dxydxy::Vector{JetConstituentsData})
+function get_btagSip2dSig(
+    pfcand_btagSip2dVal::Vector{JetConstituentsData},
+    pfcand_dxydxy::Vector{JetConstituentsData},
+)
     # Simply call the implementation function
     return get_Sip2dSig(pfcand_btagSip2dVal, pfcand_dxydxy)
 end
@@ -1964,15 +2051,17 @@ end
 
 Calculate the 3D signed impact parameter value for each particle relative to the jet axis.
 """
-function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
-                               D0::Vector{JetConstituentsData},
-                               Z0::Vector{JetConstituentsData},
-                               phi0::Vector{JetConstituentsData},
-                               Bz::Float32)
+function get_Sip3dVal_clusterV(
+    jets::Vector{JetReconstruction.EEJet},
+    D0::Vector{JetConstituentsData},
+    Z0::Vector{JetConstituentsData},
+    phi0::Vector{JetConstituentsData},
+    Bz::Float32,
+)
     n_jets = length(jets)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         px = Float32(jets[i].px)
         py = Float32(jets[i].py)
         pz = Float32(jets[i].pz)
@@ -1983,7 +2072,7 @@ function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
 
         cprojs = Vector{Float32}(undef, n_constituents)
 
-        @inbounds for j in 1:n_constituents
+        @inbounds for j = 1:n_constituents
             d0_val = d0_vals[j]
             z0_val = z0_vals[j]
             phi_val = phi_vals[j]
@@ -2011,11 +2100,13 @@ function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
     return result
 end
 
-function get_btagSip3dVal(jets::Vector{JetReconstruction.EEJet},
-                          pfcand_dxy::Vector{JetConstituentsData},
-                          pfcand_dz::Vector{JetConstituentsData},
-                          pfcand_phi0::Vector{JetConstituentsData},
-                          Bz::Float32)
+function get_btagSip3dVal(
+    jets::Vector{JetReconstruction.EEJet},
+    pfcand_dxy::Vector{JetConstituentsData},
+    pfcand_dz::Vector{JetConstituentsData},
+    pfcand_phi0::Vector{JetConstituentsData},
+    Bz::Float32,
+)
     # Simply call the implementation function
     return get_Sip3dVal_clusterV(jets, pfcand_dxy, pfcand_dz, pfcand_phi0, Bz)
 end
@@ -2027,20 +2118,22 @@ end
 
 Calculate the 3D signed impact parameter significance (value/error) for each particle.
 """
-function get_Sip3dSig(Sip3dVals::Vector{JetConstituentsData},
-                      err2_D0::Vector{JetConstituentsData},
-                      err2_Z0::Vector{JetConstituentsData})
+function get_Sip3dSig(
+    Sip3dVals::Vector{JetConstituentsData},
+    err2_D0::Vector{JetConstituentsData},
+    err2_Z0::Vector{JetConstituentsData},
+)
     n_jets = length(Sip3dVals)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         n_constituents = length(Sip3dVals[i])
         sigs = Vector{Float32}(undef, n_constituents)
         sip_vals = Sip3dVals[i]
         err_d0 = err2_D0[i]
         err_z0 = err2_Z0[i]
 
-        @simd for j in 1:n_constituents
+        @simd for j = 1:n_constituents
             err_d0_val = err_d0[j]
             err_z0_val = err_z0[j]
             sip_val = sip_vals[j]
@@ -2060,9 +2153,11 @@ function get_Sip3dSig(Sip3dVals::Vector{JetConstituentsData},
     return result
 end
 
-function get_btagSip3dSig(Sip3dVals::Vector{JetConstituentsData},
-                          err2_D0::Vector{JetConstituentsData},
-                          err2_Z0::Vector{JetConstituentsData})
+function get_btagSip3dSig(
+    Sip3dVals::Vector{JetConstituentsData},
+    err2_D0::Vector{JetConstituentsData},
+    err2_Z0::Vector{JetConstituentsData},
+)
     # Simply call the implementation function
     return get_Sip3dSig(Sip3dVals, err2_D0, err2_Z0)
 end
@@ -2078,22 +2173,24 @@ end
 Calculate the jet distance value for each particle, measuring the distance between
 the point of closest approach and the jet axis.
 """
-function get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
-                                 jets_constituents::Vector{<:JetConstituents},
-                                 D0::Vector{JetConstituentsData},
-                                 Z0::Vector{JetConstituentsData},
-                                 phi0::Vector{JetConstituentsData},
-                                 Bz::Float32)
+function get_JetDistVal_clusterV(
+    jets::Vector{JetReconstruction.EEJet},
+    jets_constituents::Vector{<:JetConstituents},
+    D0::Vector{JetConstituentsData},
+    Z0::Vector{JetConstituentsData},
+    phi0::Vector{JetConstituentsData},
+    Bz::Float32,
+)
     n_jets = length(jets)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    for i in 1:n_jets
+    for i = 1:n_jets
         px_jet, py_jet, pz_jet = jets[i].px, jets[i].py, jets[i].pz
         single_jet_constituents = jets_constituents[i]
         n_constituents = length(single_jet_constituents)
         tmp = Vector{Float32}(undef, n_constituents)
 
-        for j in 1:n_constituents
+        for j = 1:n_constituents
             if D0[i][j] != UNDEF_VAL
                 d0_val = D0[i][j]
                 z0_val = Z0[i][j]
@@ -2136,12 +2233,14 @@ function get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
     return result
 end
 
-function get_btagJetDistVal(jets::Vector{JetReconstruction.EEJet},
-                            jets_constituents::Vector{<:JetConstituents},
-                            D0::Vector{JetConstituentsData},
-                            Z0::Vector{JetConstituentsData},
-                            phi0::Vector{JetConstituentsData},
-                            Bz::Float32)
+function get_btagJetDistVal(
+    jets::Vector{JetReconstruction.EEJet},
+    jets_constituents::Vector{<:JetConstituents},
+    D0::Vector{JetConstituentsData},
+    Z0::Vector{JetConstituentsData},
+    phi0::Vector{JetConstituentsData},
+    Bz::Float32,
+)
     # Simply call the implementation function
     return get_JetDistVal_clusterV(jets, jets_constituents, D0, Z0, phi0, Bz)
 end
@@ -2153,20 +2252,22 @@ end
 
 Calculate the jet distance significance (value/error) for each particle.
 """
-function get_JetDistSig(JetDistVal::Vector{JetConstituentsData},
-                        err2_D0::Vector{JetConstituentsData},
-                        err2_Z0::Vector{JetConstituentsData})
+function get_JetDistSig(
+    JetDistVal::Vector{JetConstituentsData},
+    err2_D0::Vector{JetConstituentsData},
+    err2_Z0::Vector{JetConstituentsData},
+)
     n_jets = length(JetDistVal)
     result = Vector{JetConstituentsData}(undef, n_jets)
 
-    @inbounds for i in 1:n_jets
+    @inbounds for i = 1:n_jets
         n_constituents = length(JetDistVal[i])
         tmp = Vector{Float32}(undef, n_constituents)
         jet_vals = JetDistVal[i]
         err_d0 = err2_D0[i]
         err_z0 = err2_Z0[i]
 
-        @simd for j in 1:n_constituents
+        @simd for j = 1:n_constituents
             err_d0_val = err_d0[j]
             err_z0_val = err_z0[j]
             jet_val = jet_vals[j]
@@ -2186,9 +2287,11 @@ function get_JetDistSig(JetDistVal::Vector{JetConstituentsData},
     return result
 end
 
-function get_btagJetDistSig(JetDistVal::Vector{JetConstituentsData},
-                            err2_D0::Vector{JetConstituentsData},
-                            err2_Z0::Vector{JetConstituentsData})
+function get_btagJetDistSig(
+    JetDistVal::Vector{JetConstituentsData},
+    err2_D0::Vector{JetConstituentsData},
+    err2_Z0::Vector{JetConstituentsData},
+)
     # Simply call the implementation function
     return get_JetDistSig(JetDistVal, err2_D0, err2_Z0)
 end

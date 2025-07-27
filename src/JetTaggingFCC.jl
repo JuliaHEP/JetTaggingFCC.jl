@@ -7,7 +7,7 @@ using ONNXRunTime
 using StructArrays: StructVector
 using LorentzVectorHEP
 
-const JetConstituents = StructVector{ReconstructedParticle, <:Any}
+const JetConstituents = StructVector{ReconstructedParticle,<:Any}
 const JetConstituentsData = Vector{Float32}
 
 # Include constituent utilities (as a module for now)
