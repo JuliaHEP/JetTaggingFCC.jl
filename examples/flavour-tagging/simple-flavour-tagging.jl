@@ -22,6 +22,7 @@ using PhysicalConstants
 using StructArrays
 using JetReconstruction
 using JetTaggingFCC
+using JetTaggingFCC: EEJet
 
 function main()
     # Paths to model files

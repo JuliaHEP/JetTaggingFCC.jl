@@ -5,6 +5,9 @@ using JetReconstruction
 using StructArrays: StructVector
 using LorentzVectorHEP
 
+# Import EEJet alias from parent module
+import ..JetTaggingFCC: EEJet
+
 # Import physical constants
 include("JetPhysicalConstants.jl")
 using .JetPhysicalConstants
@@ -1906,7 +1909,7 @@ end
 # get_JetDistSig - Jet distance significance
 
 """
-    get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
+    get_Sip2dVal_clusterV(jets::Vector{EEJet},
                         D0::Vector{JetConstituentsData},
                         phi0::Vector{JetConstituentsData},
                         Bz::Float32) -> Vector{JetConstituentsData}
@@ -1924,7 +1927,7 @@ This is a Julia implementation of the C++ function get_Sip2dVal_clusterV.
 Vector of vectors of 2D signed impact parameter values (one vector per jet)
 """
 function get_Sip2dVal_clusterV(
-    jets::Vector{JetReconstruction.EEJet},
+    jets::Vector{EEJet},
     D0::Vector{JetConstituentsData},
     phi0::Vector{JetConstituentsData},
     Bz::Float32,
@@ -1967,7 +1970,7 @@ function get_Sip2dVal_clusterV(
 end
 
 """
-    get_btagSip2dVal(jets::Vector{JetReconstruction.EEJet},
+    get_btagSip2dVal(jets::Vector{EEJet},
                     pfcand_dxy::Vector{JetConstituentsData},
                     pfcand_phi0::Vector{JetConstituentsData},
                     Bz::Float32) -> Vector{JetConstituentsData}
@@ -1975,7 +1978,7 @@ end
 Call the implementation function get_Sip2dVal_clusterV
 """
 function get_btagSip2dVal(
-    jets::Vector{JetReconstruction.EEJet},
+    jets::Vector{EEJet},
     pfcand_dxy::Vector{JetConstituentsData},
     pfcand_phi0::Vector{JetConstituentsData},
     Bz::Float32,
@@ -2043,7 +2046,7 @@ function get_btagSip2dSig(
 end
 
 """
-    get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
+    get_Sip3dVal_clusterV(jets::Vector{EEJet},
                         D0::Vector{JetConstituentsData},
                         Z0::Vector{JetConstituentsData},
                         phi0::Vector{JetConstituentsData},
@@ -2052,7 +2055,7 @@ end
 Calculate the 3D signed impact parameter value for each particle relative to the jet axis.
 """
 function get_Sip3dVal_clusterV(
-    jets::Vector{JetReconstruction.EEJet},
+    jets::Vector{EEJet},
     D0::Vector{JetConstituentsData},
     Z0::Vector{JetConstituentsData},
     phi0::Vector{JetConstituentsData},
@@ -2101,7 +2104,7 @@ function get_Sip3dVal_clusterV(
 end
 
 function get_btagSip3dVal(
-    jets::Vector{JetReconstruction.EEJet},
+    jets::Vector{EEJet},
     pfcand_dxy::Vector{JetConstituentsData},
     pfcand_dz::Vector{JetConstituentsData},
     pfcand_phi0::Vector{JetConstituentsData},
@@ -2163,7 +2166,7 @@ function get_btagSip3dSig(
 end
 
 """
-    get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
+    get_JetDistVal_clusterV(jets::Vector{EEJet},
                             jets_constituents::Vector{<:JetConstituents},
                             D0::Vector{JetConstituentsData},
                             Z0::Vector{JetConstituentsData},
@@ -2174,7 +2177,7 @@ Calculate the jet distance value for each particle, measuring the distance betwe
 the point of closest approach and the jet axis.
 """
 function get_JetDistVal_clusterV(
-    jets::Vector{JetReconstruction.EEJet},
+    jets::Vector{EEJet},
     jets_constituents::Vector{<:JetConstituents},
     D0::Vector{JetConstituentsData},
     Z0::Vector{JetConstituentsData},
@@ -2234,7 +2237,7 @@ function get_JetDistVal_clusterV(
 end
 
 function get_btagJetDistVal(
-    jets::Vector{JetReconstruction.EEJet},
+    jets::Vector{EEJet},
     jets_constituents::Vector{<:JetConstituents},
     D0::Vector{JetConstituentsData},
     Z0::Vector{JetConstituentsData},

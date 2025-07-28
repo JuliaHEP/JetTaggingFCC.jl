@@ -7,6 +7,9 @@ using ONNXRunTime
 using StructArrays: StructVector
 using LorentzVectorHEP
 
+# Create type alias for consistency
+const EEJet = JetReconstruction.EEjet
+
 const JetConstituents = StructVector{ReconstructedParticle,<:Any}
 const JetConstituentsData = Vector{Float32}
 
@@ -29,6 +32,6 @@ export get_weights
 export get_weight
 
 # Export types
-export JetConstituents, JetConstituentsData
+export JetConstituents, JetConstituentsData, EEJet
 
 end # module JetTaggingFCC
