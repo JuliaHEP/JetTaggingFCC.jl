@@ -1,5 +1,12 @@
-/Manifest*.toml
+Manifest.toml
 *.DS_Store
 *.root
-examples/flavour-tagging/Manifest.toml
 examples/flavour-tagging/data/wc_pt_7classes_12_04_2023/fccee_fl.swp
+.vscode/
+
+# Misc files
+.DS_Store
+/notebooks/*
+**/profile/*
+/statprof/*
+/debug/*

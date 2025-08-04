@@ -15,7 +15,7 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 [compat]
 EDM4hep = "0.4.0"
 JSON = "0.21"
-JetReconstruction = "0.4.8"
+JetReconstruction = "1.0"
 LorentzVectorHEP = "0.1.6"
 ONNXRunTime = "1.3.1"
 PhysicalConstants = "0.2.4"

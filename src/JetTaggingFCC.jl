@@ -7,9 +7,6 @@ using ONNXRunTime
 using StructArrays: StructVector
 using LorentzVectorHEP
 
-# Create type alias for consistency
-const EEJet = JetReconstruction.EEjet
-
 const JetConstituents = StructVector{ReconstructedParticle,<:Any}
 const JetConstituentsData = Vector{Float32}
 
