@@ -5,9 +5,6 @@ using JetReconstruction
 using StructArrays: StructVector
 using LorentzVectorHEP
 
-# Import EEJet alias from parent module
-import ..JetTaggingFCC: EEJet
-
 # Import physical constants
 include("JetPhysicalConstants.jl")
 using .JetPhysicalConstants
@@ -1449,19 +1446,19 @@ end
 # get_theta_phi_rel_cluster - Combined relative angles for clustered jets as they use the same logic
 
 """
-    get_erel_cluster(jets::Vector{EEJet}, 
+    get_erel_cluster(jets::Vector{T} where T, 
                         jets_constituents::Vector{<:JetConstituents}) -> Vector{JetConstituentsData}
 
 Calculate relative energy (E_const/E_jet) for each constituent particle in clustered jets.
 
 # Arguments
-- `jets::Vector{EEJet}`: Vector of clustered jets.
+- `jets::Vector{T} where T`: Vector of clustered jets (any jet type).
 - `jets_constituents::Vector{<:JetConstituents}`: Vector of jet constituents corresponding to the jets.
 
 # Returns
 Vector containing relative energy values for each constituent in the jets.
 """
-function get_erel_cluster(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents})
+function get_erel_cluster(jets::Vector{T} where T, jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets)
     res = Vector{Vector{Float32}}(undef, n_jets)
 
@@ -1496,14 +1493,14 @@ end
 Calculate log of relative energy (log(E_const/E_jet)) for each constituent particle in clustered jets.
 
 # Arguments
-- `jets::Vector{EEJet}`: Vector of clustered jets
+- `jets::Vector{T} where T`: Vector of clustered jets (any jet type)
 - `jets_constituents::Vector{JetConstituents}`: Vector of jet constituents corresponding to the jets
 
 # Returns
 Vector containing log of relative energy values for each constituent in the jets
 """
 function get_erel_log_cluster(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     jets_constituents::Vector{<:JetConstituents},
 )
     n_jets = length(jets)
@@ -1540,14 +1537,14 @@ end
 Calculate relative theta angle between constituent particle and clustered jet axis.
 
 # Arguments
-- `jets::Vector{EEJet}`: Vector of clustered jets
+- `jets::Vector{T} where T`: Vector of clustered jets (any jet type)
 - `jets_constituents::Vector{JetConstituents}`: Vector of jet constituents corresponding to the jets
 
 # Returns
 Vector containing relative theta angle values for each constituent in the jets
 """
 function get_thetarel_cluster(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     jets_constituents::Vector{<:JetConstituents},
 )
     n_jets = length(jets)
@@ -1600,14 +1597,14 @@ end
 Calculate relative phi angle between constituent particle and clustered jet axis.
 
 # Arguments
-- `jets::Vector{EEJet}`: Vector of clustered jets
+- `jets::Vector{T} where T`: Vector of clustered jets (any jet type)
 - `jets_constituents::Vector{JetConstituents}`: Vector of jet constituents corresponding to the jets
 
 # Returns
 Vector containing relative phi angle values for each constituent in the jets
 """
 function get_phirel_cluster(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     jets_constituents::Vector{<:JetConstituents},
 )
     n_jets = length(jets)
@@ -1658,14 +1655,14 @@ end
 Calculate relative theta and phi angles between constituent particles and clustered jet axis.
 
 # Arguments
-- `jets::Vector{EEJet}`: Vector of clustered jets
+- `jets::Vector{T} where T`: Vector of clustered jets (any jet type)
 - `jets_constituents::Vector{JetConstituents}`: Vector of jet constituents corresponding to the jets
 
 # Returns
 Tuple of Vectors containing relative theta and phi angle values for each constituent in the jets
 """
 function get_thetarel_phirel_cluster(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     jets_constituents::Vector{<:JetConstituents},
 )
     n_jets = length(jets)
@@ -1927,7 +1924,7 @@ This is a Julia implementation of the C++ function get_Sip2dVal_clusterV.
 Vector of vectors of 2D signed impact parameter values (one vector per jet)
 """
 function get_Sip2dVal_clusterV(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     D0::Vector{JetConstituentsData},
     phi0::Vector{JetConstituentsData},
     Bz::Float32,
@@ -1978,7 +1975,7 @@ end
 Call the implementation function get_Sip2dVal_clusterV
 """
 function get_btagSip2dVal(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     pfcand_dxy::Vector{JetConstituentsData},
     pfcand_phi0::Vector{JetConstituentsData},
     Bz::Float32,
@@ -2055,7 +2052,7 @@ end
 Calculate the 3D signed impact parameter value for each particle relative to the jet axis.
 """
 function get_Sip3dVal_clusterV(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     D0::Vector{JetConstituentsData},
     Z0::Vector{JetConstituentsData},
     phi0::Vector{JetConstituentsData},
@@ -2104,7 +2101,7 @@ function get_Sip3dVal_clusterV(
 end
 
 function get_btagSip3dVal(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     pfcand_dxy::Vector{JetConstituentsData},
     pfcand_dz::Vector{JetConstituentsData},
     pfcand_phi0::Vector{JetConstituentsData},
@@ -2177,7 +2174,7 @@ Calculate the jet distance value for each particle, measuring the distance betwe
 the point of closest approach and the jet axis.
 """
 function get_JetDistVal_clusterV(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     jets_constituents::Vector{<:JetConstituents},
     D0::Vector{JetConstituentsData},
     Z0::Vector{JetConstituentsData},
@@ -2237,7 +2234,7 @@ function get_JetDistVal_clusterV(
 end
 
 function get_btagJetDistVal(
-    jets::Vector{EEJet},
+    jets::Vector{T} where T,
     jets_constituents::Vector{<:JetConstituents},
     D0::Vector{JetConstituentsData},
     Z0::Vector{JetConstituentsData},

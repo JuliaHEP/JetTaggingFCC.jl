@@ -1,6 +1,7 @@
 module JetTaggingFCC
 
 using JetReconstruction
+using JetReconstruction: EEJet
 using EDM4hep
 using JSON
 using ONNXRunTime
@@ -29,6 +30,6 @@ export get_weights
 export get_weight
 
 # Export types
-export JetConstituents, JetConstituentsData, EEJet
+export JetConstituents, JetConstituentsData
 
 end # module JetTaggingFCC

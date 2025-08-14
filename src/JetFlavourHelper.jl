@@ -1,6 +1,5 @@
 # JetFlavourHelper functions
-
-# Using statements are already in the main module
+# EEJet is imported in the parent module JetTaggingFCC
 
 """
     JetFlavourHelper

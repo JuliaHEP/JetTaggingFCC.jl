@@ -13,6 +13,10 @@ This script demonstrates how to:
 Run with: julia --project simple-flavour-tagging.jl
 """
 
+# Ensure we're using the development version of JetReconstruction
+using Pkg
+Pkg.develop("JetReconstruction")
+
 using EDM4hep
 using EDM4hep.RootIO
 using LorentzVectorHEP
