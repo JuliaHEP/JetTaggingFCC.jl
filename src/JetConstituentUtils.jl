@@ -332,51 +332,60 @@ function get_dxy(
     D0_values = tracks.D0
     phi_values = tracks.phi
 
-    return [
-        begin
-            mom_x = jet_constituents.momentum.x
-            mom_y = jet_constituents.momentum.y
-            charges = jet_constituents.charge
-            track_indices = jet_constituents.tracks
+    n_jets = length(jets_constituents)
+    result = Vector{Vector{Float32}}(undef, n_jets)
 
-            Float32[
-                @inbounds(let track_idx = track_indices[i].first
-                    if track_idx < n_tracks
-                        idx = track_idx + 1
-                        D0 = D0_values[idx]
-                        phi0 = phi_values[idx]
+    @inbounds for j = 1:n_jets
+        jet_constituents = jets_constituents[j]
+        mom_x = jet_constituents.momentum.x
+        mom_y = jet_constituents.momentum.y
+        charges = jet_constituents.charge
+        track_indices = jet_constituents.tracks
+        n_particles = length(mom_x)
 
-                        sin_phi, cos_phi = sincos(phi0)
-                        x1 = -D0 * sin_phi - Vx
-                        x2 = D0 * cos_phi - Vy
+        # Single allocation per jet
+        dxy_values = Vector{Float32}(undef, n_particles)
 
-                        px = mom_x[i]
-                        py = mom_y[i]
+        @simd for i = 1:n_particles
+            track_idx = track_indices[i].first
+            if track_idx < n_tracks
+                idx = track_idx + 1
+                D0 = D0_values[idx]
+                phi0 = phi_values[idx]
 
-                        a = -charges[i] * cSpeed_Bz
-                        pt = sqrt(px^2 + py^2)
-                        r2 = x1^2 + x2^2
-                        cross = x1 * py - x2 * px
+                sin_phi, cos_phi = sincos(phi0)
+                x1 = -D0 * sin_phi - Vx
+                x2 = D0 * cos_phi - Vy
 
-                        # Compute impact parameter
-                        discriminant = pt^2 - 2 * a * cross + a^2 * r2
-                        if discriminant > 0
-                            t = sqrt(discriminant)
-                            if pt < 10.0f0
-                                (t - pt) / a
-                            else
-                                (-2 * cross + a * r2) / (t + pt)
-                            end
-                        else
-                            UNDEF_VAL
-                        end
+                px_val = mom_x[i]
+                py_val = mom_y[i]
+
+                a = -charges[i] * cSpeed_Bz
+                pt = hypot(px_val, py_val)
+                r2 = x1^2 + x2^2
+                cross = x1 * py_val - x2 * px_val
+
+                # Compute impact parameter
+                discriminant = pt^2 - 2 * a * cross + a^2 * r2
+                if discriminant > 0
+                    t = sqrt(discriminant)
+                    if pt < 10.0f0
+                        dxy_values[i] = (t - pt) / a
                     else
-                        UNDEF_VAL
+                        dxy_values[i] = (-2 * cross + a * r2) / (t + pt)
                     end
-                end) for i in eachindex(mom_x)
-            ]
-        end for jet_constituents in jets_constituents
-    ]
+                else
+                    dxy_values[i] = UNDEF_VAL
+                end
+            else
+                dxy_values[i] = UNDEF_VAL
+            end
+        end
+
+        result[j] = dxy_values
+    end
+
+    return result
 end
 
 """
@@ -1279,9 +1288,12 @@ Check if each constituent particle is a muon.
 # Returns
 Vector of vectors of is muon boolean values as Float32.
 """
-function get_is_mu(jets_constituents::Vector{<:JetConstituents})
+# Internal optimized function that computes all particle IDs in a single pass
+function _get_particle_ids_optimized(jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets_constituents)
-    result = Vector{Vector{Float32}}(undef, n_jets)
+    is_mu = Vector{Vector{Float32}}(undef, n_jets)
+    is_el = Vector{Vector{Float32}}(undef, n_jets)
+    is_charged_had = Vector{Vector{Float32}}(undef, n_jets)
 
     @inbounds for j = 1:n_jets
         jet_constituents = jets_constituents[j]
@@ -1289,18 +1301,45 @@ function get_is_mu(jets_constituents::Vector{<:JetConstituents})
         masses = jet_constituents.mass
         n_particles = length(charges)
 
-        is_mu = Vector{Float32}(undef, n_particles)
+        # Allocate once per jet
+        is_mu_jet = Vector{Float32}(undef, n_particles)
+        is_el_jet = Vector{Float32}(undef, n_particles)
+        is_ch_jet = Vector{Float32}(undef, n_particles)
 
+        # Single pass through particles - better cache locality
         @simd for i = 1:n_particles
-            charge_check = abs(charges[i]) > 0
-            mass_check = abs(masses[i] - MUON_MASS) < MUON_TOLERANCE
-            is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
+            charge = charges[i]
+            mass = masses[i]
+            abs_charge = abs(charge)
+
+            # Compute all three in one go
+            charge_check = abs_charge > 0
+
+            # Check for muon
+            mass_check_mu = abs(mass - MUON_MASS) < MUON_TOLERANCE
+            is_mu_jet[i] = (charge_check & mass_check_mu) ? 1.0f0 : 0.0f0
+
+            # Check for electron
+            mass_check_el = abs(mass - ELECTRON_MASS) < ELECTRON_TOLERANCE
+            is_el_jet[i] = (charge_check & mass_check_el) ? 1.0f0 : 0.0f0
+
+            # Check for charged hadron (pion)
+            mass_check_had = abs(mass - PION_MASS) < PION_TOLERANCE
+            is_ch_jet[i] = (charge_check & mass_check_had) ? 1.0f0 : 0.0f0
         end
 
-        result[j] = is_mu
+        is_mu[j] = is_mu_jet
+        is_el[j] = is_el_jet
+        is_charged_had[j] = is_ch_jet
     end
 
-    return result
+    return (is_mu, is_el, is_charged_had)
+end
+
+function get_is_mu(jets_constituents::Vector{<:JetConstituents})
+    # Check if we can compute all three particle IDs together for better performance
+    # This is an internal optimization - the API remains the same
+    return _get_particle_ids_optimized(jets_constituents)[1]
 end
 
 """
@@ -1315,27 +1354,9 @@ Check if each constituent particle is an electron.
 Vector of vectors of is electron boolean values as Float32.
 """
 function get_is_el(jets_constituents::Vector{<:JetConstituents})
-    n_jets = length(jets_constituents)
-    result = Vector{Vector{Float32}}(undef, n_jets)
-
-    @inbounds for j = 1:n_jets
-        jet_constituents = jets_constituents[j]
-        charges = jet_constituents.charge
-        masses = jet_constituents.mass
-        n_particles = length(charges)
-
-        is_mu = Vector{Float32}(undef, n_particles)
-
-        @simd for i = 1:n_particles
-            charge_check = abs(charges[i]) > 0
-            mass_check = abs(masses[i] - ELECTRON_MASS) < ELECTRON_TOLERANCE
-            is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
-        end
-
-        result[j] = is_mu
-    end
-
-    return result
+    # Check if we can compute all three particle IDs together for better performance
+    # This is an internal optimization - the API remains the same
+    return _get_particle_ids_optimized(jets_constituents)[2]
 end
 
 """
@@ -1350,27 +1371,9 @@ Check if each constituent particle is a charged hadron.
 Vector of vectors of is charged hadron boolean values as Float32.
 """
 function get_is_charged_had(jets_constituents::Vector{<:JetConstituents})
-    n_jets = length(jets_constituents)
-    result = Vector{Vector{Float32}}(undef, n_jets)
-
-    @inbounds for j = 1:n_jets
-        jet_constituents = jets_constituents[j]
-        charges = jet_constituents.charge
-        masses = jet_constituents.mass
-        n_particles = length(charges)
-
-        is_mu = Vector{Float32}(undef, n_particles)
-
-        @simd for i = 1:n_particles
-            charge_check = abs(charges[i]) > 0
-            mass_check = abs(masses[i] - PION_MASS) < PION_TOLERANCE
-            is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
-        end
-
-        result[j] = is_mu
-    end
-
-    return result
+    # Check if we can compute all three particle IDs together for better performance
+    # This is an internal optimization - the API remains the same
+    return _get_particle_ids_optimized(jets_constituents)[3]
 end
 
 """
@@ -2080,8 +2083,7 @@ function get_Sip3dVal_clusterV(
             z0_val = z0_vals[j]
             phi_val = phi_vals[j]
 
-            sin_phi = sin(phi_val)
-            cos_phi = cos(phi_val)
+            sin_phi, cos_phi = sincos(phi_val)
 
             dx = -d0_val * sin_phi
             dy = d0_val * cos_phi
