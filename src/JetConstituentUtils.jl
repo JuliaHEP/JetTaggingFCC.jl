@@ -429,58 +429,56 @@ function get_dz(
             track_indices = jet_constituents.tracks
 
             Float32[
-                @inbounds(let track_idx = track_indices[i].first
-                    if track_idx < n_tracks
-                        idx = track_idx + 1
-                        D0 = D0_values[idx]
-                        Z0 = Z0_values[idx]
-                        phi0 = phi_values[idx]
+                @inbounds(
+                    let track_idx = track_indices[i].first
+                        if track_idx < n_tracks
+                            idx = track_idx + 1
+                            D0 = D0_values[idx]
+                            Z0 = Z0_values[idx]
+                            phi0 = phi_values[idx]
 
-                        sin_phi, cos_phi = sincos(phi0)
+                            sin_phi, cos_phi = sincos(phi0)
 
-                        x1 = -D0 * sin_phi - Vx
-                        x2 = D0 * cos_phi - Vy
-                        x3 = Z0 - Vz
+                            x1 = muladd(-D0, sin_phi, -Vx)
+                            x2 = muladd(D0, cos_phi, -Vy)
+                            x3 = Z0 - Vz
 
-                        px = mom_x[i]
-                        py = mom_y[i]
-                        pz = mom_z[i]
+                            px = mom_x[i]
+                            py = mom_y[i]
+                            pz = mom_z[i]
 
-                        # Compute intermediate values
-                        a = -charges[i] * cSpeed_Bz
-                        pt = sqrt(px^2 + py^2)
-                        c = a / (2 * pt)
-                        r2 = x1^2 + x2^2
-                        cross = x1 * py - x2 * px
-                        t = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
+                            a = -charges[i] * cSpeed_Bz
 
-                        d = if pt < 10.0f0
-                            (t - pt) / a
+                            pt = hypot(px, py)
+
+                            u = muladd(a, x2, px)
+                            v = muladd(-a, x1, py)
+                            t = hypot(u, v)
+
+                            c = a / (2 * pt)
+                            r2 = x1^2 + x2^2
+                            cross = x1 * py - x2 * px
+
+                            d = if pt < 10.0f0
+                                (t - pt) / a
+                            else
+                                (-2 * cross + a * r2) / (t + pt)
+                            end
+
+                            denom = 1 + 2 * c * d
+                            b_arg = max(r2 - d^2, 0.0f0) / (abs(denom) + 1.0f-10)
+                            b = clamp(copysign(c * sqrt(b_arg), denom), -1.0f0, 1.0f0)
+
+                            st = asin(b) / c
+                            ct = pz / pt
+
+                            dot = x1 * px + x2 * py
+                            x3 + copysign(ct * st, -dot)
                         else
-                            (-2 * cross + a * r2) / (t + pt)
+                            UNDEF_VAL
                         end
-
-                        b_arg = max(r2 - d^2, 0.0f0) / (1 + 2 * c * d)
-                        b = c * sqrt(b_arg)
-                        if abs(b) > 1.0f0
-                            b = sign(b)
-                        end
-
-                        # Calculate st and ct
-                        st = asin(b) / c
-                        ct = pz / pt
-
-                        # Calculate z0
-                        dot = x1 * px + x2 * py
-                        if dot > 0.0f0
-                            x3 - ct * st
-                        else
-                            x3 + ct * st
-                        end
-                    else
-                        UNDEF_VAL
                     end
-                end) for i in eachindex(mom_x)
+                ) for i in eachindex(mom_x)
             ]
         end for jet_constituents in jets_constituents
     ]
@@ -533,27 +531,15 @@ function get_phi0(
 
                         sin_phi, cos_phi = sincos(phi0_track)
 
-                        x1 = -D0 * sin_phi - Vx
-                        x2 = D0 * cos_phi - Vy
+                        x1 = muladd(-D0, sin_phi, -Vx)
+                        x2 = muladd(D0, cos_phi, -Vy)
 
                         px = mom_x[i]
                         py = mom_y[i]
 
                         a = -charges[i] * cSpeed_Bz
 
-                        # Minimize redundant calculations
-                        pt2 = px^2 + py^2
-                        r2 = x1^2 + x2^2
-                        cross = x1 * py - x2 * px
-                        two_a_cross = 2 * a * cross
-                        a2_r2 = a^2 * r2
-
-                        t = sqrt(pt2 - two_a_cross + a2_r2)
-                        inv_t = 1.0f0 / t
-
-                        a_x1 = a * x1
-                        a_x2 = a * x2
-                        atan((py - a_x1) * inv_t, (px + a_x2) * inv_t)
+                        atan(muladd(-a, x1, py), muladd(a, x2, px))
                     else
                         UNDEF_VAL
                     end
@@ -1582,8 +1568,8 @@ function get_thetarel_cluster(
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
 
             # Second rotation
-            p_rot2_x = p_rot_x * cos_theta - mom_z[j] * sin_theta
-            p_rot2_z = p_rot_x * sin_theta + mom_z[j] * cos_theta
+            p_rot2_x = p_rot_x * cos_theta + mom_z[j] * sin_theta
+            p_rot2_z = -p_rot_x * sin_theta + mom_z[j] * cos_theta
 
             pt_rot_sq = p_rot2_x^2 + p_rot_y^2
             pt_rot = sqrt(pt_rot_sq)
@@ -1642,7 +1628,7 @@ function get_phirel_cluster(
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
 
             # Second rotation around y-axis by -theta_jet
-            p_rot2_x = p_rot_x * cos_theta - mom_z[j] * sin_theta
+            p_rot2_x = p_rot_x * cos_theta + mom_z[j] * sin_theta
 
             # Calculate phi in rotated frame
             jet_constituents_collection[j] = atan(p_rot_y, p_rot2_x)
@@ -1703,8 +1689,8 @@ function get_thetarel_phirel_cluster(
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
 
             # Second rotation around y-axis by -theta_jet
-            p_rot2_x = p_rot_x * cos_theta - mom_z[j] * sin_theta
-            p_rot2_z = p_rot_x * sin_theta + mom_z[j] * cos_theta
+            p_rot2_x = p_rot_x * cos_theta + mom_z[j] * sin_theta
+            p_rot2_z = -p_rot_x * sin_theta + mom_z[j] * cos_theta
             p_rot2_y = p_rot_y
 
             # Calculate both theta and phi in rotated frame
@@ -1761,9 +1747,14 @@ function get_dndx(
         tmp = Vector{Float32}(undef, n_constituents)
 
         @simd ivdep for j = 1:n_constituents
-            has_valid_track = tracks_first[j].first + 1 <= tracks_len
+            jl_idx = tracks_first[j].first + 1
+            has_valid_track = jl_idx <= tracks_len
             is_charged_had = isChargedHad[j] == 1.0f0
-            tmp[j] = ifelse(has_valid_track & is_charged_had, -1.0f0, 0.0f0)
+            tmp[j] = ifelse(
+                has_valid_track & is_charged_had,
+                Float32(dNdx[jl_idx].value / 1000.0),
+                0.0f0,
+            )
         end
 
         result[i] = tmp

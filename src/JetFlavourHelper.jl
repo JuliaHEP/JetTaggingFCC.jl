@@ -28,6 +28,47 @@ function setup_onnx_runtime(onnx_path::AbstractString, json_path::AbstractString
 end
 
 """
+    get_event_primary_vertex(mcps) -> LorentzVector
+
+Get the event primary vertex from the MCParticle collection.
+Matches the C++ FCCAnalyses `MCParticle::get_EventPrimaryVertexP4()` logic:
+1. First searches for a particle with generatorStatus == 21 (Pythia8 hard subprocess)
+2. Falls back to generatorStatus == 2 with |vertex.z| > 1e-12
+3. Returns (0,0,0,0) if no suitable vertex is found
+
+The returned LorentzVector has (t, x, y, z) with:
+- x, y, z: vertex position in mm
+- t: vertex time converted to mm (time_s * c * 1e3)
+"""
+function get_event_primary_vertex(mcps)
+    # First try: generatorStatus == 21 (incoming particles of the hardest subprocess)
+    for p in mcps
+        if p.generatorStatus == 21
+            return LorentzVector(
+                Float32(p.time * 1.0f3 * 2.99792458f8),
+                Float32(p.vertex.x),
+                Float32(p.vertex.y),
+                Float32(p.vertex.z),
+            )
+        end
+    end
+
+    # Fallback: generatorStatus == 2 with non-zero vertex.z
+    for p in mcps
+        if p.generatorStatus == 2 && abs(p.vertex.z) > 1e-12
+            return LorentzVector(
+                Float32(p.time * 1.0f3 * 2.99792458f8),
+                Float32(p.vertex.x),
+                Float32(p.vertex.y),
+                Float32(p.vertex.z),
+            )
+        end
+    end
+
+    return LorentzVector(0.0f0, 0.0f0, 0.0f0, 0.0f0)
+end
+
+"""
     normalize_feature(value::Float32, info::Dict) -> Float32
 
 Normalize a feature value based on the preprocessing information.
@@ -368,6 +409,7 @@ Extract features for jet flavour tagging based on JSON configuration.
 - `calohits`: Vector of calorimeter hits (optional)
 - `dNdx`: Vector of dE/dx measurements (optional)
 - `mc_vertices`: Vector of MC vertices for each reconstructed particle (optional)
+- `primary_vertex`: Explicit primary vertex LorentzVector (optional, takes precedence over mc_vertices)
 
 # Returns
 Dictionary containing extracted features as specified in the JSON configuration.
@@ -388,16 +430,16 @@ function extract_features(
     }(),
     dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}(),
     mc_vertices::Union{Nothing,Vector{LorentzVector{Float32}}} = nothing,
+    primary_vertex::Union{Nothing,LorentzVector} = nothing,
 )
 
     # Primary vertex for displacement calculations
-    # Use provided MC vertices or default to (0,0,0,0)
-    # If mc_vertices are provided, find the most common vertex (primary vertex)
-    if isnothing(mc_vertices) || isempty(mc_vertices)
+    if !isnothing(primary_vertex)
+        v_in = primary_vertex
+    elseif isnothing(mc_vertices) || isempty(mc_vertices)
         v_in = LorentzVector(0.0, 0.0, 0.0, 0.0)
     else
-        # Find the most common vertex (likely the primary vertex)
-        # For simplicity, use the first non-zero vertex found
+        # Fallback: use the first non-zero vertex found
         v_in = LorentzVector(0.0, 0.0, 0.0, 0.0)
         for vertex in mc_vertices
             if vertex.x != 0.0 || vertex.y != 0.0 || vertex.z != 0.0
